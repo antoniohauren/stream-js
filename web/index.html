@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <aside class="sidebar">
+  <aside id="sidebar" class="sidebar">
     <header>Streamroom<span class="brand-mark">↗</span></header>
     <nav class="rooms" aria-label="Rooms">
       <h2>ROOMS</h2>
@@ -18,16 +18,15 @@
     <section id="joinPanel" class="join-panel">
       <form id="joinForm">
         <label for="name">Display name</label>
-        <input id="name" maxlength="32" placeholder="Your name" autocomplete="nickname" required>
+        <input id="name" maxlength="32" placeholder="Your name (optional)" autocomplete="nickname">
         <button class="primary" type="submit">Join room</button>
       </form>
-      <p>Three open rooms. No codes needed.</p>
     </section>
     <section class="people"><h2>IN THIS ROOM <span id="count">0</span></h2><div id="members" class="members"></div></section>
     <div class="connection"><i id="dot"></i><div><strong id="connection">Not connected</strong><small id="roomLabel">Select a room to join</small></div><button id="leave" class="subtle" hidden>Leave</button></div>
   </aside>
   <main>
-    <header class="topbar"><strong id="roomTitle">room-1</strong><button id="invite" class="subtle" disabled>Copy room link ↗</button></header>
+    <header class="topbar"><div class="room-heading"><button id="toggleSidebar" class="subtle" type="button" aria-controls="sidebar" aria-expanded="true">Hide sidebar</button><strong id="roomTitle">room-1</strong></div><button id="invite" class="subtle" disabled>Copy room link ↗</button></header>
     <section class="content" aria-label="Screen sharing">
       <div class="stage">
         <div class="stage-top"><span><i id="liveDot"></i> <span id="stageStatus">READY WHEN YOU ARE</span></span><span id="qualityBadge">1080p / 30 FPS</span></div>
@@ -35,8 +34,8 @@
         <div id="empty" class="empty"><div class="screen-icon" aria-hidden="true">▣</div><h1>A space for your screen.</h1><p>Join a room and share a window, tab, or screen.</p><button id="heroShare" class="primary" disabled>Share your screen</button></div>
         <button id="enableSound" class="sound-button" hidden>Enable playback &amp; audio</button>
       </div>
-      <div class="controlbar"><div class="control-info"><strong>Screen sharing</strong><small id="audioStatus">Window or tab audio when supported</small></div><div class="controls"><label>Quality<select id="quality"><option value="1080">1080p · 30 fps</option><option value="720">720p · 30 fps</option></select></label><label class="mic-label"><input type="checkbox" id="mic"> Microphone</label><button id="share" class="primary" disabled>Share screen</button><button id="stop" class="danger" hidden>Stop sharing</button></div></div>
-      <p id="notice" role="status" aria-live="polite">Choose a room and enter your name to join.</p>
+      <div class="controlbar"><div class="control-info"><strong>Screen sharing</strong><small id="audioStatus">Window or tab audio when supported</small></div><div class="controls"><label>Quality<select id="quality"><option value="1080">1080p · 30 fps</option><option value="720">720p · 30 fps</option></select></label><label><input type="checkbox" id="shareAudio" checked> Share audio</label><button id="share" class="primary" disabled>Share screen</button><button id="stop" class="danger" hidden>Stop sharing</button></div></div>
+      <p id="notice" role="status" aria-live="polite">Choose a room to join. Leave your name blank for a random one.</p>
     </section>
   </main>
   <script src="/app.js"></script>

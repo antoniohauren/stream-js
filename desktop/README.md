@@ -16,7 +16,7 @@ The app does not host a server. **Reload** disconnects an active room/share;
 closing the window stops sharing. **Open in Edge** explicitly opens the same
 site in full Microsoft Edge, never Firefox.
 
-Screen/window capture and microphone use WebView2's normal permission prompts.
+Screen/window capture uses WebView2's normal permission prompts. Microphone capture is not supported.
 **Audio source availability depends on the installed runtime and Windows.**
 WebView2 has no normal browser tabs to share. If the desired source/audio is
 missing, use **Open in Edge**. The wrapper does not change WebRTC quality or fix
@@ -62,5 +62,5 @@ icon loading, and the native loader; it does not open a window or join a room.
 `Streamroom.exe --self-test` repeats the startup test (exit 0 means success).
 
 Before distributing, test two Windows machines against the live site: join,
-screen/window picker, audio, microphone, playback, stop via picker, closing,
+screen/window picker, shared audio, playback, stop via picker, closing,
 reload, room switching, external links, and missing-runtime handling.
