@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add an optional single-file Windows 11 WebView2 client for `https://share.detrouse.com/`, with an original icon and an explicit Edge fallback. It does not bundle a browser or change the Node server deployment.
+
 ## 0.2.0
 
 - Replace the Rust server with plain JavaScript running on Node.js, preserving rooms, chat, WebSocket signaling, same-origin checks, TLS, and temporary TURN credentials.

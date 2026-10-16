@@ -12,7 +12,7 @@ npm ci --omit=dev --ignore-scripts
 npm start
 ```
 
-Open `http://localhost:8787` in Edge or Chrome. Stop with Ctrl+C. There is no Windows executable or automatic browser launcher anymore; open the site directly. Existing desktop launchers that open your public site can still use it.
+Open `http://localhost:8787` in Edge or Chrome. Stop with Ctrl+C. For a small Windows 11 desktop client that loads your hosted site using WebView2 instead of the default browser, see [desktop/README.md](desktop/README.md). The desktop client is optional and does not host the server.
 
 The default bind address is loopback. For Internet use, put Caddy or another trusted HTTPS reverse proxy in front of it. Screen capture requires HTTPS except on localhost. Preserve the Host header and support WebSocket upgrades on `/ws/`.
 

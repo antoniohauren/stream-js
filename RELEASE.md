@@ -1,6 +1,6 @@
 # Streamroom v0.2.0 — JavaScript server
 
-The current server runs directly with Node.js 22+ (Node 24 LTS recommended). Rust, Cargo, Visual Studio build tools, and the Windows executable build are no longer part of this source tree. The browser client and WebSocket protocol remain compatible.
+The current server runs directly with Node.js 22+ (Node 24 LTS recommended). Rust, Cargo, and Visual Studio build tools are not required. The optional [Windows 11 WebView2 client](desktop/README.md) is a small website wrapper, not the old executable server. The browser client and WebSocket protocol remain compatible.
 
 For an existing VPS, upload the current source including `package-lock.json`, preserve `.env`, and use the same project directory to preserve Caddy volumes:
 
