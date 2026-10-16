@@ -1,6 +1,6 @@
 # Streamroom
 
-Private screen-sharing rooms with a Discord-inspired interface. The server and browser client are plain JavaScript: **no compilation, bundler, or build step**. The Node server handles rooms, chat, and WebRTC signaling; audio/video travels peer-to-peer or through your TURN relay.
+Three open screen-sharing rooms with a simple sidebar and video interface. The server and browser client are plain JavaScript: **no compilation, bundler, or build step**. The Node server handles rooms and WebRTC signaling; audio/video travels peer-to-peer or through your TURN relay.
 
 ## Run directly
 
@@ -33,13 +33,13 @@ After changing `server.js`, restart the app; browser files are served directly f
 
 ## Features and use
 
-- Random room codes, up to eight participants, one presenter at a time.
+- Three precreated rooms in the sidebar: `room-1`, `room-2`, and `room-3`. Up to eight participants per room, one presenter at a time.
 - Screen/window/tab capture at 720p or 1080p, targeting 30 fps.
 - Source audio when offered by the browser picker; optional microphone mixing.
-- Room chat, copyable invite links, stop-sharing and leave controls.
-- No accounts, database, recordings, persistent chat, or external client JavaScript.
+- Copyable room links, stop-sharing and leave controls; click another room to switch.
+- No room tokens, chat, accounts, database, recordings, or external client JavaScript.
 
-Enter your name and leave the room code blank to create a room. Send the copied invite to participants. Everyone must use the same public server address. Click **Share screen**, choose your quality, and enable **Share audio** in the picker if available. Viewers may need **Enable playback & audio** due to autoplay rules. The local preview is muted to prevent feedback.
+Choose a room in the sidebar, enter your display name, and click **Join room**. Once your name is entered, clicking a room joins it directly. Room links preselect the room; there is no code to enter. Everyone must use the same public server address. Choose your quality, click **Share screen**, and enable **Share audio** in the picker if available. Viewers may need **Enable playback & audio** due to autoplay rules. The local preview is muted to prevent feedback. Switching rooms stops any active screen share.
 
 ## Configuration
 
@@ -57,8 +57,8 @@ TURN credentials are generated per participant, expire after 24 hours, and never
 
 ## Practical limits and security
 
-- Room codes are bearer secrets, not authentication. Anyone with site access can create rooms, and anyone with a code can join. Use trusted small groups or add access control before wider exposure.
-- One process/replica only: up to 100 rooms, eight peers per room, with in-memory state. Restarts erase rooms and chat. There is no automatic reconnect, moderation, SFU, or bidirectional voice chat.
+- Rooms are public to anyone with site access; room names and links are not secrets or authentication. Use trusted small groups or add access control before wider exposure.
+- One process/replica only: three fixed rooms, eight peers per room, with in-memory state. Empty rooms remain available; restarts disconnect participants. There is no automatic reconnect, moderation, SFU, or bidirectional voice chat.
 - Media is WebRTC-encrypted. Each viewer gets a separate stream: seven viewers at the 6 Mbps 1080p ceiling may need roughly 42 Mbps of presenter upload plus overhead. TURN adds VPS bandwidth and transfer costs.
 - Quality is an upper bound, not a guarantee. Source dimensions, hardware, upload bandwidth, and congestion control affect actual quality; smaller sources are not upscaled.
 - Capture requests `windowAudio: "window"` and `systemAudio: "exclude"`. Actual audio availability/isolation depends on the browser and OS. If window audio is unavailable, try a browser tab. Verify isolation with a second app playing sound.
@@ -72,11 +72,11 @@ npm ci --ignore-scripts
 npm test
 ```
 
-Tests include mocked browser behavior and real local HTTP/WebSocket connections. See [VALIDATION.md](VALIDATION.md) for scope. Manual acceptance: join two browsers, verify chat, share at both quality settings with sound/mic, join a third viewer, stop via both app and browser picker, and close the presenter. Repeat between two machines over HTTPS and verify TURN where required.
+Tests include mocked browser behavior and real local HTTP/WebSocket connections. See [VALIDATION.md](VALIDATION.md) for scope. Manual acceptance: join two browsers in the same room, share at both quality settings with sound/mic, join a third viewer, stop via both app and browser picker, and close the presenter. Switch between all three sidebar rooms and verify that capture stops and participants stay isolated. Repeat between two machines over HTTPS and verify TURN where required.
 
 ## Files
 
-- `server.js`: HTTP/HTTPS, rooms, WebSocket signaling, chat, TURN credentials.
+- `server.js`: HTTP/HTTPS, fixed rooms, WebSocket signaling, TURN credentials.
 - `web/`: existing browser interface, WebRTC negotiation, capture, and audio mixing; served without a build.
 - `compose.yaml`: build-free Node/Caddy deployment; `compose.turn.yaml`: optional Coturn service.
 - `Dockerfile`: optional custom-image packaging for those who want it; not used by Compose.

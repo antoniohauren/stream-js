@@ -12,7 +12,7 @@ async function setup(t, env = {}) {
   await once(app.server, 'listening');
   t.after(() => app.close());
   const origin = `http://127.0.0.1:${app.server.address().port}`;
-  async function connect(name = 'Alice', room = 'testroom') {
+  async function connect(name = 'Alice', room = 'room-1') {
     const ws = new WebSocket(`${origin.replace('http', 'ws')}/ws/${room}?name=${encodeURIComponent(name)}`, {origin});
     const messages = [];
     const waiters = [];
@@ -36,9 +36,9 @@ async function setup(t, env = {}) {
   return {...app, origin, connect};
 }
 
-test('room codes are bounded and path-safe', () => {
-  assert.ok(validRoom('a1b2c3d4-5678'));
-  for (const bad of ['short', '../private', 'room name', 'abcdefgh/', 'a'.repeat(65), 'é'.repeat(8)]) assert.equal(validRoom(bad), false);
+test('only the three precreated rooms are valid', () => {
+  for (const room of ['room-1', 'room-2', 'room-3']) assert.ok(validRoom(room));
+  for (const bad of ['room-4', 'a1b2c3d4-5678', 'short', '../private', 'room name', 'abcdefgh/', 'a'.repeat(65), 'é'.repeat(8)]) assert.equal(validRoom(bad), false);
 });
 
 test('Coturn credentials match the existing HMAC-SHA1 reference', () => {
@@ -83,14 +83,15 @@ test('WebSocket upgrades require same origin and valid room/name', async t => {
       req.end();
     });
   }
-  assert.equal(await upgrade('/ws/testroom?name=Alice'), 403);
-  assert.equal(await upgrade('/ws/testroom?name=Alice', 'https://evil.example'), 403);
+  assert.equal(await upgrade('/ws/room-1?name=Alice'), 403);
+  assert.equal(await upgrade('/ws/room-1?name=Alice', 'https://evil.example'), 403);
   assert.equal(await upgrade('/ws/short?name=Alice', origin), 400);
-  assert.equal(await upgrade('/ws/testroom?name=%20', origin), 400);
-  assert.equal(await upgrade(`/ws/testroom?name=${'a'.repeat(33)}`, origin), 400);
+  assert.equal(await upgrade('/ws/custom-room?name=Alice', origin), 400);
+  assert.equal(await upgrade('/ws/room-1?name=%20', origin), 400);
+  assert.equal(await upgrade(`/ws/room-1?name=${'a'.repeat(33)}`, origin), 400);
 });
 
-test('rooms preserve joins, chat, presenter arbitration, signaling and departure cleanup', async t => {
+test('rooms preserve joins, presenter arbitration, signaling and departure cleanup', async t => {
   const app = await setup(t);
   const alice = await app.connect(' Alice ');
   const a = await alice.next('welcome');
@@ -108,11 +109,9 @@ test('rooms preserve joins, chat, presenter arbitration, signaling and departure
   bob.send({type: 'stop'}); // viewer cannot release the presenter slot
   bob.send({type: 'ping'});
   await bob.next('pong');
-  assert.equal(app.rooms.get('testroom').presenter, a.id);
+  assert.equal(app.rooms.get('room-1').presenter, a.id);
   bob.send({type: 'signal', to: a.id, data: {candidate: 'ice'}});
   assert.deepEqual(await alice.next('signal'), {type: 'signal', from: b.id, data: {candidate: 'ice'}});
-  bob.send({type: 'chat', body: '<script>text only</script>'});
-  for (const peer of [alice, bob]) assert.deepEqual(await peer.next('chat'), {type: 'chat', name: 'Bob', body: '<script>text only</script>'});
   alice.ws.close();
   await bob.next('stopped');
   assert.equal((await bob.next('left')).id, a.id);
@@ -125,14 +124,16 @@ test('rooms preserve joins, chat, presenter arbitration, signaling and departure
   await left;
   // A close handshake can complete client-side before the server's close event.
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(app.rooms.size, 0);
+  assert.deepEqual([...app.rooms.keys()], ['room-1', 'room-2', 'room-3']);
+  assert.equal(app.rooms.get('room-1').peers.size, 0);
+  assert.equal(app.rooms.get('room-1').presenter, null);
 });
 
 test('viewer-to-viewer and cross-room signaling are not relayed', async t => {
   const app = await setup(t);
   const host = await app.connect('Host'), a = await host.next('welcome');
   const viewer = await app.connect('Viewer'), b = await viewer.next('welcome');
-  const other = await app.connect('Other', 'otherroom'), c = await other.next('welcome');
+  const other = await app.connect('Other', 'room-2'), c = await other.next('welcome');
   host.send({type: 'start'});
   await viewer.next('started');
   viewer.send({type: 'signal', to: b.id, data: 'not allowed'});
@@ -143,7 +144,7 @@ test('viewer-to-viewer and cross-room signaling are not relayed', async t => {
   viewer.send({type: 'ping'}); other.send({type: 'ping'}); host.send({type: 'ping'});
   await Promise.all([viewer.next('pong'), other.next('pong'), host.next('pong')]);
   assert.equal(received.some(m => m.type === 'signal'), false);
-  assert.equal(app.rooms.get('testroom').presenter, a.id);
+  assert.equal(app.rooms.get('room-1').presenter, a.id);
 });
 
 test('TURN configuration is included in welcome without leaking the shared secret', async t => {
@@ -165,7 +166,7 @@ test('room capacity is eight and empty rooms release capacity', async t => {
   for (let i = 0; i < 8; i++) { const p = await app.connect(`Peer ${i}`); await p.next('welcome'); peers.push(p); }
   const ninth = await app.connect('Ninth');
   assert.match((await ninth.next('error')).message, /Room is full/);
-  assert.equal(app.rooms.get('testroom').peers.size, 8);
+  assert.equal(app.rooms.get('room-1').peers.size, 8);
   const closed = once(peers[0].ws, 'close'); peers[0].ws.close(); await closed;
   await peers[1].next('left');
   const replacement = await app.connect('Replacement');

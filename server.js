@@ -13,8 +13,9 @@ const assets = new Map([
   ['/style.css', ['web/style.css', 'text/css; charset=utf-8']],
 ]);
 
+export const ROOM_NAMES = ['room-1', 'room-2', 'room-3'];
 export function validRoom(room) {
-  return /^[A-Za-z0-9-]{8,64}$/.test(room);
+  return ROOM_NAMES.includes(room);
 }
 
 export function turnServer(urls, secret, id, expires) {
@@ -41,7 +42,7 @@ export function configuration(env = process.env) {
 
 // Each process owns its rooms; run a single replica, as in the original server.
 export function createApp(config = configuration()) {
-  const rooms = new Map();
+  const rooms = new Map(ROOM_NAMES.map(name => [name, {peers: new Map(), presenter: null}]));
   const handler = (req, res) => {
     if (!['GET', 'HEAD'].includes(req.method)) {
       res.writeHead(405, {allow: 'GET, HEAD'}).end();
@@ -99,13 +100,11 @@ export function createApp(config = configuration()) {
   });
   function join(ws, key, name) {
     ws.on('error', () => ws.terminate());
-    if (!rooms.has(key) && rooms.size >= 100) { ws.close(1008, 'Server room limit reached'); return; }
-    const room = rooms.get(key) || {peers: new Map(), presenter: null};
+    const room = rooms.get(key);
     if (room.peers.size >= 8) {
       send(ws, {type: 'error', message: 'Room is full (8 people maximum).'});
       ws.close(1008, 'Room is full'); return;
     }
-    rooms.set(key, room);
     const id = randomUUID();
     const iceServers = [{urls: 'stun:stun.l.google.com:19302'}];
     if (config.turnUrls.length) iceServers.push(turnServer(config.turnUrls, config.turnSecret, id, Math.floor(Date.now() / 1000) + 86400));
@@ -143,18 +142,12 @@ export function createApp(config = configuration()) {
             if (target) send(target.ws, {type: 'signal', from: id, data: msg.data ?? null});
           }
           break;
-        case 'chat':
-          if (typeof msg.body === 'string' && msg.body.trim() && [...msg.body].length <= 1000) {
-            broadcast(room, {type: 'chat', name, body: msg.body});
-          }
-          break;
       }
     });
     ws.once('close', () => {
       room.peers.delete(id);
       if (room.presenter === id) { room.presenter = null; broadcast(room, {type: 'stopped'}); }
       broadcast(room, {type: 'left', id});
-      if (!room.peers.size) rooms.delete(key);
     });
   }
   const heartbeat = setInterval(() => {
