@@ -1,0 +1,42 @@
+# Ubuntu/Linux only: host networking preserves EC2's relay IP/port mapping.
+services:
+  app:
+    environment:
+      TURN_SECRET: ${TURN_SECRET:?Run setup-turn.sh first}
+      STREAMROOM_TURN_URLS: turn:${TURN_PUBLIC_IP:?Set TURN_PUBLIC_IP}:3478?transport=udp,turn:${TURN_PUBLIC_IP}:3478?transport=tcp
+      STREAMROOM_ICE_POLICY: ${STREAMROOM_ICE_POLICY:-relay}
+  turn:
+    image: coturn/coturn:4.18.0-r0
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=3478
+      - --listening-ip=${TURN_PRIVATE_IP:?Set TURN_PRIVATE_IP}
+      - --relay-ip=${TURN_PRIVATE_IP}
+      - --external-ip=${TURN_PUBLIC_IP}/${TURN_PRIVATE_IP}
+      - --min-port=49160
+      - --max-port=49200
+      - --realm=${DOMAIN:?Set DOMAIN}
+      - --fingerprint
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET}
+      # Coturn 4.18 leaves DTLS and CLI disabled by default.
+      # --no-dtls is unsupported; --no-cli is deprecated.
+      - --no-tls
+      - --no-tcp-relay
+      - --no-multicast-peers
+      - --denied-peer-ip=0.0.0.0-0.255.255.255
+      - --denied-peer-ip=10.0.0.0-10.255.255.255
+      - --denied-peer-ip=127.0.0.0-127.255.255.255
+      - --denied-peer-ip=169.254.0.0-169.254.255.255
+      - --denied-peer-ip=172.16.0.0-172.31.255.255
+      - --denied-peer-ip=192.168.0.0-192.168.255.255
+      - --user-quota=8
+      - --total-quota=100
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
